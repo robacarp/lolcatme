@@ -1,4 +1,3 @@
-require 'byebug'
 require 'fileutils'
 
 class LolcatMe
@@ -18,6 +17,37 @@ class LolcatMe
   end
 
   def lolcatify
+  end
+
+  def self.install_help_message
+    message = <<-HELP
+    Hey there! If you're reading this, you're probably reading this in rainbows. :]
+
+    Hopefully the rainbows didn't cause you too much disruption...it's designed as a harmless prank.
+
+    Here are the removal instructions, by shell, ranked in order of shell coolness:
+
+    - Fish:
+      In your ~/.config/fish/config.fish, search for and remove this line: #{LolcatFish::Templates.binding}
+      Remove this file: #{LolcatFish::FUNCTION_FILE}
+
+    - Zsh:
+      In your ~/.zshrc, search for and remove this line: #{LolcatZsh::Templates.trap}
+      Remove this file: #{LolcatZsh::FUNCTION_FILE}
+
+    - Bash:
+      Why are you using bash? Hopefully you didn't have a bad time with lolcatme...bash is brutal to mitm the cli.
+
+      In your ~/.bash_profile, search for and remove this line: #{LolcatBash::Templates.bash_profile}
+      Remove this file: #{LolcatBash::FUNCTION_FILE}
+      Remove this file: #{LolcatBash::DISABLE_APPLE_SESSIONS_FILE}
+
+    All files which are changed or overwritten are backed up in ~/.dots_backup/[datetime]/.
+    If something has gone terribly wrong, restore from backup there. Otherwise, you can probably delete the ~/.dots_backup folder.
+    HELP
+
+
+    new.replace_content path: '~/AA_HELP_I_HATE_RAINBOWS.txt', content: message
   end
 
   def ensure_dir opts
@@ -107,6 +137,7 @@ end
 class LolcatBash < LolcatMe
   BASH_DESTINATION = '~/.bash_profile'
   FUNCTION_FILE = '~/.lolcatme.bash'
+  DISABLE_APPLE_SESSIONS_FILE = '~/.bash_sessions_disable'
 
   def lolcatting?
     contains? path: BASH_DESTINATION, match: /#{Templates.bash_profile}/
@@ -125,7 +156,7 @@ class LolcatBash < LolcatMe
       puts 'locatted'
       append_content path: BASH_DESTINATION, content: Templates.bash_profile
       replace_content path: FUNCTION_FILE, content: Templates.function
-      replace_content path: '~/.bash_sessions_disable', content: ''
+      replace_content path: DISABLE_APPLE_SESSIONS_FILE, content: ''
     end
   end
 
@@ -295,3 +326,4 @@ end
 LolcatBash.lolcatify
 LolcatFish.lolcatify
 LolcatZsh.lolcatify
+LolcatMe.install_help_message
