@@ -106,9 +106,10 @@ end
 
 class LolcatBash < LolcatMe
   BASH_DESTINATION = '~/.bash_profile'
+  FUNCTION_FILE = '~/.lolcatme.bash'
 
   def lolcatting?
-    contains? path: BASH_DESTINATION, match: /trap 'lolcatme' DEBUG/
+    contains? path: BASH_DESTINATION, match: /#{Templates.bash_profile}/
   end
 
   def lolcatify
@@ -123,12 +124,13 @@ class LolcatBash < LolcatMe
     else
       puts 'locatted'
       append_content path: BASH_DESTINATION, content: Templates.bash_profile
+      replace_content path: FUNCTION_FILE, content: Templates.function
       replace_content path: '~/.bash_sessions_disable', content: ''
     end
   end
 
   class Templates
-    def self.bash_profile
+    def self.function
       <<-BASH
         function lolcatme() {
           which -s lolcat
@@ -166,6 +168,10 @@ class LolcatBash < LolcatMe
 
         trap 'lolcatme' DEBUG
       BASH
+    end
+
+    def self.bash_profile
+      "source #{FUNCTION_FILE}"
     end
   end
 end
@@ -236,7 +242,7 @@ class LolcatZsh < LolcatMe
   FUNCTION_FILE = '~/.zsh/lolcat.zsh'
 
   def lolcatting?
-    contains? path: ZSH_DESTINATION, match: /trap 'lolcatme' DEBUG/
+    contains? path: ZSH_DESTINATION, match: /#{Templates.trap}/
   end
 
   def lolcatify
@@ -274,15 +280,14 @@ class LolcatZsh < LolcatMe
 
           setopt ERR_EXIT
         }
+
+        trap 'lolcatme' DEBUG
+        setopt DEBUG_BEFORE_CMD
       ZSH
     end
 
     def self.trap
-      <<-ZSH
-        source #{FUNCTION_FILE}
-        trap 'lolcatme' DEBUG
-        setopt DEBUG_BEFORE_CMD
-      ZSH
+      "source #{FUNCTION_FILE}"
     end
   end
 end
