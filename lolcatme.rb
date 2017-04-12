@@ -46,8 +46,7 @@ class LolcatMe
     If something has gone terribly wrong, restore from backup there. Otherwise, you can probably delete the ~/.dots_backup folder.
     HELP
 
-
-    new.replace_content path: '~/AA_HELP_I_HATE_RAINBOWS.txt', content: message
+    new.replace_content path: '~/AA_HELP_I_HATE_RAINBOWS.txt', content: message, backup: false
   end
 
   def ensure_dir opts
@@ -64,7 +63,7 @@ class LolcatMe
     return unless File.exist? path
 
     ensure_dir path: backup_dir
-    puts "backing up #{path} to #{copied_file}"
+    puts "\tbacking up #{path} to #{copied_file}"
     FileUtils.cp path, copied_file
   end
 
@@ -120,7 +119,7 @@ class LolcatMe
     path = opts[:path]
     content = opts[:content]
 
-    backup path: path
+    backup path: path unless opts[:backup] == false
 
     File.open expand(path), 'w' do |file|
       file.puts content
@@ -153,10 +152,11 @@ class LolcatBash < LolcatMe
       puts 'already lolcatting in bash'
       return
     else
-      puts 'locatted'
+      puts 'locatting bash'
+
       append_content path: BASH_DESTINATION, content: Templates.bash_profile
-      replace_content path: FUNCTION_FILE, content: Templates.function
-      replace_content path: DISABLE_APPLE_SESSIONS_FILE, content: ''
+      replace_content path: FUNCTION_FILE, content: Templates.function, backup: false
+      replace_content path: DISABLE_APPLE_SESSIONS_FILE, content: '', backup: false
     end
   end
 
@@ -164,9 +164,8 @@ class LolcatBash < LolcatMe
     def self.function
       <<-BASH
         function lolcatme() {
-          which -s lolcat
+          which -s lolcat > /dev/null
           if [ $? -ne 0 ]; then
-            echo no lolcat
             return 0
           fi
 
@@ -226,10 +225,10 @@ class LolcatFish < LolcatMe
       return
     end
 
-    puts 'lolcatted'
+    puts 'lolcatting fish'
 
     ensure_dir path: File.dirname(FUNCTION_FILE)
-    replace_content path: FUNCTION_FILE, content: Templates.function
+    replace_content path: FUNCTION_FILE, content: Templates.function, backup: false
 
     unless contains? path: FISH_DESTINATION, match: /function fish_user_key_bindings/
       append_content path: FISH_DESTINATION, content: Templates.user_key_bindings
@@ -253,12 +252,19 @@ class LolcatFish < LolcatMe
     def self.function
       <<-FISH
         function lolcatme
-          set -l cmd (commandline)
-          set -l first (commandline --tokenize)[1]
+          which -s lolcat
 
-          if not contains $first #{LolcatMe::IGNORE_COMMANDS.join ' '} history
-            # prepend space to prevent polluting the history
-            commandline --replace " $cmd | lolcat"
+          if test $status -eq 0
+            set -l cmd (commandline)
+            set -l first (commandline --tokenize)[1]
+
+            if not contains $first #{LolcatMe::IGNORE_COMMANDS.join ' '} history
+              # prepend space to prevent polluting the history
+
+              if test -n $cmd
+                commandline --replace " $cmd | lolcat"
+              end
+            end
           end
 
           commandline -f execute
@@ -287,10 +293,10 @@ class LolcatZsh < LolcatMe
       return
     end
 
-    puts 'lolcatted zsh'
+    puts 'lolcatting zsh'
 
     ensure_dir path: File.dirname(FUNCTION_FILE)
-    replace_content path: FUNCTION_FILE, content: Templates.function
+    replace_content path: FUNCTION_FILE, content: Templates.function, backup: false
     append_content  path: ZSH_DESTINATION, content: Templates.trap
   end
 
@@ -298,6 +304,11 @@ class LolcatZsh < LolcatMe
     def self.function
       <<-ZSH
         function lolcatme() {
+          whence lolcat > /dev/null
+          if [ $? -ne 0 ]; then
+            return 0
+          fi
+
           unsafe_commands=(#{ LolcatMe::IGNORE_COMMANDS.map {|cmd| "'#{cmd}'" }.join ' ' })
           unsafe_commands+=(setopt)
 
