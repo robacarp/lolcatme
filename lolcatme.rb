@@ -3,9 +3,9 @@ require 'fileutils'
 class LolcatMe
   IGNORE_COMMANDS = %w|
     vi vim emacs nano
-    bash fish zsh
+    bash fish zsh csh ksh
     ssh mosh
-    open man
+    open man help info
   |
 
   def self.lolcatify
