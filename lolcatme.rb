@@ -6,6 +6,10 @@ class LolcatMe
     bash fish zsh csh ksh
     ssh mosh
     open man help info
+    export env local set
+    eval alias
+    case for if then else test
+    builtin print printf command test setopt unsetopt bindkey emulate title echoti echotc typeset url-quote-magic zstyle zle
   |
 
   def self.lolcatify
@@ -36,7 +40,7 @@ class LolcatMe
       Remove this file: #{LolcatZsh::FUNCTION_FILE}
 
     - Bash:
-      Why are you using bash? Hopefully you didn't have a bad time with lolcatme...bash is brutal to mitm the cli.
+      Why are you using bash? ;-) Hopefully you didn't have a bad time with lolcatme...bash is brutal to mitm the cli.
 
       In your ~/.bash_profile, search for and remove this line: #{LolcatBash::Templates.bash_profile}
       Remove this file: #{LolcatBash::FUNCTION_FILE}
@@ -173,14 +177,6 @@ class LolcatBash < LolcatMe
             return 0
           fi
 
-          if [ -e /etc/bashrc_Apple_Terminal ]; then
-            grep -F --quiet "'$BASH_COMMAND'" /etc/bashrc_Apple_Terminal
-            if [ $? -eq 0 ]; then
-              echo terminal boot sequence
-              return 0
-            fi
-          fi
-
           unsafe_commands=(#{ LolcatMe::IGNORE_COMMANDS.map {|cmd| "'#{cmd}'" }.join ' ' })
           unsafe_commands+=('shell_session_history_check' 'update_terminal_cwd')
           for cmd in "${unsafe_commands[@]}"; do
@@ -252,21 +248,41 @@ class LolcatFish < LolcatMe
     def self.function
       <<-FISH
         function lolcatme
+          set -l errors 0
+
+          # dont try to lolcat when it isnt installed
           which -s lolcat
-
           if test $status -eq 0
-            set -l cmd (commandline)
-            set -l first (commandline --tokenize)[1]
-
-            if not contains $first #{LolcatMe::IGNORE_COMMANDS.join ' '} history
-              # prepend space to prevent polluting the history
-
-              if test -n $cmd
-                commandline --replace " $cmd | lolcat"
-              end
-            end
+            set errors (math $errors + 1)
           end
 
+          set -l cmd (commandline)
+          set -l first (commandline --tokenize)[1]
+          set -l last_char (string sub --start=-1 $cmd)
+
+          # dont lolcat a bunch of commands which dont play well with pipes
+          if not contains $first #{LolcatMe::IGNORE_COMMANDS.join ' '} history
+            set errors (math $errors + 1)
+          end
+
+          # dont lolcat when the command is blank
+          if test -n $cmd
+            set errors (math $errors + 1)
+          end
+
+          # dont lolcat when the command ends in a slash or tilde (directory change)
+          if test $last_char = '/' -o $last_char = '~'
+            set errors (math $errors + 1)
+          end
+
+
+          # if there arent any problems, lolcat the command
+          # - prepend space to prevent polluting the autocomplete history
+          if test $errors -eq 0
+            commandline --replace " $cmd | lolcat"
+          end
+
+          # execute the command line
           commandline -f execute
         end
       FISH
@@ -304,24 +320,27 @@ class LolcatZsh < LolcatMe
     def self.function
       <<-ZSH
         function lolcatme() {
-          whence lolcat > /dev/null
-          if [ $? -ne 0 ]; then
+          [ $lolcat_available -eq 0 ] || return 0
+
+          unsafe_commands=' #{LolcatMe::IGNORE_COMMANDS.join ' '} [[ '
+
+          # does the command contain an =?
+          if test "${ZSH_DEBUG_CMD#*'='}" != $ZSH_DEBUG_CMD; then
             return 0
           fi
 
-          unsafe_commands=(#{ LolcatMe::IGNORE_COMMANDS.map {|cmd| "'#{cmd}'" }.join ' ' })
-          unsafe_commands+=(setopt)
+          # what's the first word in the command
+          first_word=" ${${(@z)ZSH_DEBUG_CMD}[1]} "
+          if test "${unsafe_commands#*$first_word}" != $unsafe_commands; then
+            return 0
+          fi
 
-          for cmd in $unsafe_commands; do
-            if [[ "'"$ZSH_DEBUG_CMD"'" =~ $cmd.* ]]; then
-              return 0
-            fi
-          done
-
-          eval ${ZSH_DEBUG_CMD} | lolcat
-
+          eval $ZSH_DEBUG_CMD | lolcat
           setopt ERR_EXIT
         }
+
+        whence lolcat > /dev/null
+        export lolcat_available=$?
 
         trap 'lolcatme' DEBUG
         setopt DEBUG_BEFORE_CMD
